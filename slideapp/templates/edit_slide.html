@@ -27,21 +27,33 @@
             border: none;
         }
 
+        /* 工具栏样式 */
         #toolbar {
-            position: absolute;
-            top: 10px;
-            left: 10px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
         }
 
-        #toolbar button {
-            margin-right: 10px;
+        /* 返回主页按钮样式，与注销按钮一致 */
+        .return-button {
+            background-color: gray;
+            border: none;
+            color: #ffffff;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 0; /* 方角样式 */
+        }
+
+        .return-button:hover {
+            background-color: gray; /* 保持灰色，风格统一 */
         }
     </style>
 </head>
 <body>
     <!-- 工具栏，包含返回主页的按钮 -->
     <div id="toolbar">
-        <button onclick="location.href='{% url 'index' %}'">返回主页</button>
+        <button class="return-button" onclick="location.href='{% url 'index' %}'">返回主页</button>
     </div>
 
     <textarea id="editor"></textarea>
@@ -151,7 +163,19 @@
         // 图片上传的代码，与之前相同
         // 获取 CSRF token 的函数
         function getCookie(name) {
-            // ...（保持不变）
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    // 检查这个 cookie 字符串是否以我们想要的名字开头
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
         var csrftoken = getCookie('csrftoken');
 

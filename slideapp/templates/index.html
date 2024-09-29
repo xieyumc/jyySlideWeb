@@ -5,7 +5,7 @@
 <head>
     <title>Slide</title>
     <style>
-        /* 样式可以根据需要调整 */
+        /* 原有的样式保持不变 */
         .slide-list {
             display: flex;
             flex-wrap: wrap;
@@ -34,7 +34,7 @@
             background-color: #f0f0f0;
             font-weight: bold;
         }
-        /* 添加删除按钮的样式 */
+        /* 删除按钮的样式 */
         .delete-button {
             position: absolute;
             top: 5px;
@@ -44,6 +44,22 @@
             cursor: pointer;
             font-size: 16px;
             color: black;
+        }
+        /* 注销按钮的样式 */
+        .logout-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: gray;
+            border: none;
+            color: #ffffff;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 0; /* 去除圆角，方角样式 */
+        }
+        .logout-button:hover {
+            background-color: gray; /* 保持灰色，风格统一 */
         }
     </style>
 </head>
@@ -67,6 +83,12 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- 注销按钮 -->
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">注销</button>
+    </form>
 
     <!-- 添加 JavaScript 代码 -->
     <script>
