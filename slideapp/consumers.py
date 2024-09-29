@@ -59,6 +59,32 @@ class SlideConsumer(AsyncWebsocketConsumer):
     def save_slide_content(self, content):
         slide = Slide.objects.get(id=self.slide_id)
         slide.content = content
+
+        # 跳过 YAML 元数据
+        lines = content.split('\n')
+        in_front_matter = False
+        content_started = False
+        title = '未命名幻灯片'
+
+        for line in lines:
+            stripped_line = line.strip()
+
+            # 检查 YAML 分隔符 '---' 或 '+++'
+            if stripped_line == '---' or stripped_line == '+++':
+                if not in_front_matter:
+                    in_front_matter = True
+                else:
+                    in_front_matter = False
+                continue
+
+            if in_front_matter:
+                continue
+
+            if stripped_line.startswith('#'):
+                title = stripped_line.lstrip('#').strip()
+                break
+
+        slide.title = title
         slide.save()
 
     async def convert_markdown_to_html(self, markdown_content):

@@ -10,6 +10,7 @@
             display: flex;
             flex-wrap: wrap;
         }
+
         .slide-item {
             width: 200px;
             height: 150px;
@@ -21,6 +22,7 @@
             font-size: 18px;
             cursor: pointer;
         }
+
         .slide-item .title {
             position: absolute;
             bottom: 5px;
@@ -30,6 +32,7 @@
             line-height: normal;
             text-align: center;
         }
+
         .slide-item.new-slide {
             background-color: #f0f0f0;
             font-weight: bold;
@@ -37,19 +40,19 @@
     </style>
 </head>
 <body>
-    <h1>我的幻灯片</h1>
-    <div class="slide-list">
-        <!-- 新建幻灯片的入口 -->
-        <div class="slide-item new-slide" onclick="location.href='{% url 'create_slide' %}'">
-            新建幻灯片
-        </div>
-        <!-- 展示已有的幻灯片 -->
-        {% for slide in slides %}
+{#    <h1>我的幻灯片</h1>#}
+<div class="slide-list">
+    <!-- 新建幻灯片的入口 -->
+    <div class="slide-item new-slide" onclick="location.href='{% url 'create_slide' %}'">
+        新建幻灯片
+    </div>
+    <!-- 展示已有的幻灯片 -->
+    {% for slide in slides %}
         <div class="slide-item" onclick="location.href='{% url 'edit_slide' slide.id %}'">
             {{ slide.title }}
             <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
         </div>
-        {% endfor %}
-    </div>
+    {% endfor %}
+</div>
 </body>
 </html>
