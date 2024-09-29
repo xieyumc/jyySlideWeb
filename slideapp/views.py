@@ -14,8 +14,10 @@ from django.shortcuts import render, redirect
 from .models import Slide
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 
 @csrf_exempt
+@login_required
 def upload_image(request):
     if request.method == 'POST':
         image = request.FILES.get('image')
@@ -46,19 +48,22 @@ def upload_image(request):
 
 
 # slideapp/views.py
-
+@login_required
 def index(request):
     slides = Slide.objects.all().order_by('-updated_at')
     return render(request, 'index.html', {'slides': slides})
 
+@login_required
 def create_slide(request):
     slide = Slide.objects.create()
     return redirect('edit_slide', slide_id=slide.id)
 
+@login_required
 def edit_slide(request, slide_id):
     slide = Slide.objects.get(id=slide_id)
     return render(request, 'edit_slide.html', {'slide': slide})
 
+@login_required
 def delete_slide(request, slide_id):
     slide = get_object_or_404(Slide, id=slide_id)
     slide.delete()

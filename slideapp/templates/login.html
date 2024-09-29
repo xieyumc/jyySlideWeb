@@ -1,0 +1,16 @@
+<!-- templates/login.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户登录</title>
+</head>
+<body>
+    <h1>登录</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">登录</button>
+    </form>
+</body>
+</html>

@@ -9,12 +9,22 @@ from .src.converter import converter
 from django.conf import settings
 from .models import Slide
 from asgiref.sync import sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
+from django.shortcuts import get_object_or_404
+from .models import Slide
+
 
 class SlideConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # 获取 URL 中的 slide_id 参数
-        self.slide_id = self.scope['url_route']['kwargs'].get('slide_id')
-        await self.accept()
+        # 检查用户是否已登录
+        if self.scope["user"] == AnonymousUser():
+            await self.close()
+        else:
+            self.slide_id = self.scope['url_route']['kwargs'].get('slide_id')
+            await self.accept()
+
 
     async def disconnect(self, close_code):
         pass
