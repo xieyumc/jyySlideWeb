@@ -3,14 +3,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>我的幻灯片</title>
+    <title>Slide</title>
     <style>
-        /* 样式同之前 */
+        /* 样式可以根据需要调整 */
         .slide-list {
             display: flex;
             flex-wrap: wrap;
         }
-
         .slide-item {
             width: 200px;
             height: 150px;
@@ -22,7 +21,6 @@
             font-size: 18px;
             cursor: pointer;
         }
-
         .slide-item .title {
             position: absolute;
             bottom: 5px;
@@ -32,27 +30,86 @@
             line-height: normal;
             text-align: center;
         }
-
         .slide-item.new-slide {
             background-color: #f0f0f0;
             font-weight: bold;
         }
+        /* 添加删除按钮的样式 */
+        .delete-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: black;
+        }
     </style>
 </head>
 <body>
-{#    <h1>我的幻灯片</h1>#}
-<div class="slide-list">
-    <!-- 新建幻灯片的入口 -->
-    <div class="slide-item new-slide" onclick="location.href='{% url 'create_slide' %}'">
-        新建幻灯片
-    </div>
-    <!-- 展示已有的幻灯片 -->
-    {% for slide in slides %}
-        <div class="slide-item" onclick="location.href='{% url 'edit_slide' slide.id %}'">
-            {{ slide.title }}
-            <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
+    <h1></h1>
+    <div class="slide-list">
+        <!-- 新建幻灯片的入口 -->
+        <div class="slide-item new-slide" onclick="location.href='{% url 'create_slide' %}'">
+            新建幻灯片
         </div>
-    {% endfor %}
-</div>
+        <!-- 展示已有的幻灯片 -->
+        {% for slide in slides %}
+        <div class="slide-item">
+            <!-- 删除按钮 -->
+            <button class="delete-button" onclick="confirmDelete({{ slide.id }})">&times;</button>
+            <!-- 点击幻灯片区域进入编辑 -->
+            <div onclick="location.href='{% url 'edit_slide' slide.id %}'" style="height: 100%;">
+                {{ slide.title }}
+                <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 添加 JavaScript 代码 -->
+    <script>
+        function confirmDelete(slideId) {
+            if (confirm('您确定要删除这张幻灯片吗？此操作无法撤销。')) {
+                // 发送删除请求
+                fetch('/delete/' + slideId + '/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // 删除成功，刷新页面
+                        location.reload();
+                    } else {
+                        alert('删除失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除失败', error);
+                    alert('删除失败');
+                });
+            }
+        }
+
+        // 获取 CSRF token 的函数
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    // 检查这个 cookie 字符串是否以我们想要的名字开头
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
 </body>
 </html>

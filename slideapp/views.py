@@ -13,6 +13,7 @@ from imghdr import what
 from django.shortcuts import render, redirect
 from .models import Slide
 from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
 
 @csrf_exempt
 def upload_image(request):
@@ -57,3 +58,8 @@ def create_slide(request):
 def edit_slide(request, slide_id):
     slide = Slide.objects.get(id=slide_id)
     return render(request, 'edit_slide.html', {'slide': slide})
+
+def delete_slide(request, slide_id):
+    slide = get_object_or_404(Slide, id=slide_id)
+    slide.delete()
+    return JsonResponse({'status': 'success'})
