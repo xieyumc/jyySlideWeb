@@ -10,7 +10,9 @@
     </style>
 </head>
 <body>
-    <textarea id="editor"># 欢迎使用 JYY Slide Web\n\n开始编写您的 Markdown...</textarea>
+    <textarea id="editor"># 欢迎使用 JYY Slide Web
+
+开始编写您的 Markdown...</textarea>
     <div id="preview">
         <iframe id="preview-iframe"></iframe>
     </div>
@@ -21,16 +23,40 @@
     <!-- 与 WebSocket 进行通信的脚本 -->
     <script>
         var socket = new WebSocket('ws://' + window.location.host + '/ws/slide/');
+        var currentIndices = { h: 0, v: 0, f: undefined };
 
         socket.onmessage = function(e) {
             var data = JSON.parse(e.data);
             var html_content = data['html'];
 
-            // 更新预览 iframe 的内容
             var iframe = document.getElementById('preview-iframe');
+
+            // 获取当前幻灯片的索引
+            if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.getIndices) {
+                currentIndices = iframe.contentWindow.Reveal.getIndices();
+            }
+
+            // 更新预览 iframe 的内容
             iframe.contentDocument.open();
             iframe.contentDocument.write(html_content);
             iframe.contentDocument.close();
+
+            // 等待 iframe 加载完成后，恢复幻灯片位置
+            iframe.onload = function() {
+                function restoreSlide() {
+                    if (iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
+                        iframe.contentWindow.Reveal.slide(currentIndices.h, currentIndices.v, currentIndices.f);
+
+                        // 当幻灯片变化时，更新 currentIndices
+                        iframe.contentWindow.Reveal.on('slidechanged', function(event) {
+                            currentIndices = iframe.contentWindow.Reveal.getIndices();
+                        });
+                    } else {
+                        setTimeout(restoreSlide, 50);
+                    }
+                }
+                restoreSlide();
+            };
         };
 
         socket.onopen = function(e) {
