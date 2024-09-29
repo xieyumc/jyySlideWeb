@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JYY Slide Web</title>
+    <style>
+        body { display: flex; height: 100vh; margin: 0; }
+        #editor { width: 50%; height: 100%; }
+        #preview { width: 50%; height: 100%; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <textarea id="editor"># 欢迎使用 JYY Slide Web\n\n开始编写您的 Markdown...</textarea>
+    <div id="preview">
+        <iframe id="preview-iframe"></iframe>
+    </div>
+
+    <!-- 引入必要的 JavaScript 库，例如 jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- 与 WebSocket 进行通信的脚本 -->
+    <script>
+        var socket = new WebSocket('ws://' + window.location.host + '/ws/slide/');
+
+        socket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            var html_content = data['html'];
+
+            // 更新预览 iframe 的内容
+            var iframe = document.getElementById('preview-iframe');
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(html_content);
+            iframe.contentDocument.close();
+        };
+
+        socket.onopen = function(e) {
+            console.log('WebSocket 连接已打开');
+            sendMarkdown();
+        };
+
+        socket.onclose = function(e) {
+            console.log('WebSocket 连接已关闭');
+        };
+
+        // 监听编辑器内容的变化
+        $('#editor').on('input', function() {
+            sendMarkdown();
+        });
+
+        function sendMarkdown() {
+            var markdown = $('#editor').val();
+            socket.send(JSON.stringify({
+                'markdown': markdown
+            }));
+        }
+    </script>
+</body>
+</html>

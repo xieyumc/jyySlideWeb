@@ -1,0 +1,11 @@
+jinja2
+lxml
+markdown
+pygments
+pyquery
+pyyaml
+requests
+types-markdown
+types-pyyaml
+types-requests
+whitenoise
