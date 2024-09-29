@@ -10,6 +10,10 @@ import uuid
 from django.conf import settings
 from imghdr import what
 
+from django.shortcuts import render, redirect
+from .models import Slide
+from django.http import JsonResponse
+
 @csrf_exempt
 def upload_image(request):
     if request.method == 'POST':
@@ -37,5 +41,19 @@ def upload_image(request):
         return JsonResponse({'error': '不支持的请求方法'}, status=405)
 
 
+
+
+
+# slideapp/views.py
+
 def index(request):
-    return render(request, 'index.html')
+    slides = Slide.objects.all().order_by('-updated_at')
+    return render(request, 'index.html', {'slides': slides})
+
+def create_slide(request):
+    slide = Slide.objects.create()
+    return redirect('edit_slide', slide_id=slide.id)
+
+def edit_slide(request, slide_id):
+    slide = Slide.objects.get(id=slide_id)
+    return render(request, 'edit_slide.html', {'slide': slide})

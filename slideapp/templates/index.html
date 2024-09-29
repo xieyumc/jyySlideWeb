@@ -1,166 +1,55 @@
+<!-- templates/index.html -->
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>JYY Slide Web</title>
+    <title>我的幻灯片</title>
     <style>
-        body {
+        /* 样式同之前 */
+        .slide-list {
             display: flex;
-            height: 100vh;
-            margin: 0;
+            flex-wrap: wrap;
         }
-
-        #editor {
-            width: 50%;
-            height: 100%;
+        .slide-item {
+            width: 200px;
+            height: 150px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            position: relative;
+            text-align: center;
+            line-height: 150px;
+            font-size: 18px;
+            cursor: pointer;
         }
-
-        #preview {
-            width: 50%;
-            height: 100%;
-        }
-
-        iframe {
+        .slide-item .title {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
             width: 100%;
-            height: 100%;
-            border: none;
+            font-size: 14px;
+            line-height: normal;
+            text-align: center;
+        }
+        .slide-item.new-slide {
+            background-color: #f0f0f0;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-<textarea id="editor"># 欢迎使用 JYY Slide Web
-
-开始编写您的 Markdown...</textarea>
-<div id="preview">
-    <iframe id="preview-iframe"></iframe>
-</div>
-
-<!-- 引入必要的 JavaScript 库，例如 jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- 与 WebSocket 进行通信的脚本 -->
-<script>
-    var socket = new WebSocket('ws://' + window.location.host + '/ws/slide/');
-    var currentIndices = {h: 0, v: 0, f: undefined};
-
-    socket.onmessage = function (e) {
-        var data = JSON.parse(e.data);
-        var html_content = data['html'];
-
-        var iframe = document.getElementById('preview-iframe');
-
-        // 获取当前幻灯片的索引
-        if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.getIndices) {
-            currentIndices = iframe.contentWindow.Reveal.getIndices();
-        }
-
-        // 更新预览 iframe 的内容
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(html_content);
-        iframe.contentDocument.close();
-
-        // 等待 iframe 加载完成后，恢复幻灯片位置
-        iframe.onload = function () {
-            function restoreSlide() {
-                if (iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
-                    iframe.contentWindow.Reveal.slide(currentIndices.h, currentIndices.v, currentIndices.f);
-
-                    // 当幻灯片变化时，更新 currentIndices
-                    iframe.contentWindow.Reveal.on('slidechanged', function (event) {
-                        currentIndices = iframe.contentWindow.Reveal.getIndices();
-                    });
-                } else {
-                    setTimeout(restoreSlide, 50);
-                }
-            }
-
-            restoreSlide();
-        };
-    };
-
-    socket.onopen = function (e) {
-        console.log('WebSocket 连接已打开');
-        sendMarkdown();
-    };
-
-    socket.onclose = function (e) {
-        console.log('WebSocket 连接已关闭');
-    };
-
-    // 监听编辑器内容的变化
-    $('#editor').on('input', function () {
-        sendMarkdown();
-    });
-
-    function sendMarkdown() {
-        var markdown = $('#editor').val();
-        socket.send(JSON.stringify({
-            'markdown': markdown
-        }));
-    }
-
-    var editor = document.getElementById('editor');
-
-    // 监听粘贴事件
-    editor.addEventListener('paste', function (e) {
-        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (var i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                var file = items[i].getAsFile();
-                uploadImage(file);
-                e.preventDefault();
-            }
-        }
-    });
-
-    // 监听拖放事件
-    editor.addEventListener('drop', function (e) {
-        e.preventDefault();
-        var files = e.dataTransfer.files;
-        for (var i = 0; i < files.length; i++) {
-            if (files[i].type.indexOf('image') !== -1) {
-                uploadImage(files[i]);
-            }
-        }
-    });
-
-    function uploadImage(file) {
-        var formData = new FormData();
-        formData.append('image', file);
-
-        // 使用 AJAX 发送图片数据
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/upload_image/', true);
-
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                if (response.url) {
-                    insertImageMarkdown(response.url);
-                } else {
-                    alert('上传失败');
-                }
-            } else {
-                alert('上传失败');
-            }
-        };
-
-        xhr.send(formData);
-    }
-
-    function insertImageMarkdown(url) {
-        var markdownImage = '![](' + url + ')';
-
-        // 获取光标位置并插入文本
-        var startPos = editor.selectionStart;
-        var endPos = editor.selectionEnd;
-        var value = editor.value;
-
-        editor.value = value.substring(0, startPos) + markdownImage + value.substring(endPos);
-        editor.selectionStart = editor.selectionEnd = startPos + markdownImage.length;
-
-        // 触发输入事件，更新预览
-        editor.dispatchEvent(new Event('input'));
-    }
-</script>
+    <h1>我的幻灯片</h1>
+    <div class="slide-list">
+        <!-- 新建幻灯片的入口 -->
+        <div class="slide-item new-slide" onclick="location.href='{% url 'create_slide' %}'">
+            新建幻灯片
+        </div>
+        <!-- 展示已有的幻灯片 -->
+        {% for slide in slides %}
+        <div class="slide-item" onclick="location.href='{% url 'edit_slide' slide.id %}'">
+            {{ slide.title }}
+            <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
+        </div>
+        {% endfor %}
+    </div>
 </body>
 </html>

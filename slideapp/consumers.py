@@ -1,13 +1,19 @@
+# slideapp/consumers.py
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import tempfile
 import os
 import shutil
 from .src.converter import converter
-from django.conf import settings  # 导入 settings
+from django.conf import settings
+from .models import Slide
+from asgiref.sync import sync_to_async
 
 class SlideConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        # 获取 URL 中的 slide_id 参数
+        self.slide_id = self.scope['url_route']['kwargs'].get('slide_id')
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -15,8 +21,47 @@ class SlideConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        markdown_content = data['markdown']
+        action = data.get('action')
 
+        if action == 'load':
+            # 加载指定的 PPT 内容
+            content = await self.get_slide_content()
+            await self.send(text_data=json.dumps({
+                'action': 'load',
+                'content': content
+            }))
+        elif action == 'save':
+            # 保存当前的 PPT 内容
+            markdown_content = data['markdown']
+            await self.save_slide_content(markdown_content)
+
+            # 继续处理转换和预览
+            html_content = await self.convert_markdown_to_html(markdown_content)
+            await self.send(text_data=json.dumps({
+                'action': 'preview',
+                'html': html_content
+            }))
+        elif action == 'preview':
+            # 仅生成预览，不保存
+            markdown_content = data['markdown']
+            html_content = await self.convert_markdown_to_html(markdown_content)
+            await self.send(text_data=json.dumps({
+                'action': 'preview',
+                'html': html_content
+            }))
+
+    @sync_to_async
+    def get_slide_content(self):
+        slide = Slide.objects.get(id=self.slide_id)
+        return slide.content
+
+    @sync_to_async
+    def save_slide_content(self, content):
+        slide = Slide.objects.get(id=self.slide_id)
+        slide.content = content
+        slide.save()
+
+    async def convert_markdown_to_html(self, markdown_content):
         # 创建临时目录
         with tempfile.TemporaryDirectory() as temp_dir:
             # 创建临时 Markdown 文件
@@ -46,7 +91,4 @@ class SlideConsumer(AsyncWebsocketConsumer):
                 for filename in os.listdir(source_img_dir):
                     shutil.copy(os.path.join(source_img_dir, filename), dest_img_dir)
 
-            # 发送 HTML 内容回前端
-            await self.send(text_data=json.dumps({
-                'html': html_content
-            }))
+            return html_content
