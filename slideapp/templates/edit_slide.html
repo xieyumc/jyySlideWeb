@@ -34,7 +34,7 @@
             right: 20px;
         }
 
-        /* 返回主页按钮样式，与注销按钮一致 */
+        /* 返回主页按钮样式 */
         .return-button {
             background-color: gray;
             border: none;
@@ -42,11 +42,11 @@
             padding: 10px 15px;
             font-size: 14px;
             cursor: pointer;
-            border-radius: 0; /* 方角样式 */
+            border-radius: 0;
         }
 
         .return-button:hover {
-            background-color: gray; /* 保持灰色，风格统一 */
+            background-color: gray;
         }
     </style>
 </head>
@@ -61,7 +61,7 @@
         <iframe id="preview-iframe"></iframe>
     </div>
 
-    <!-- 引入jQuery -->
+    <!-- 引入必要的 JavaScript 库，例如 jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- 与 WebSocket 进行通信的脚本 -->
@@ -103,6 +103,9 @@
                 iframe.contentDocument.write(html_content);
                 iframe.contentDocument.close();
 
+                // 清除错误消息
+                clearErrorMessage();
+
                 // 等待 iframe 加载完成后，恢复幻灯片位置
                 iframe.onload = function () {
                     function restoreSlide() {
@@ -120,6 +123,9 @@
 
                     restoreSlide();
                 };
+            } else if (action === 'error') {
+                var errorMessage = data['message'];
+                displayErrorMessage(errorMessage);
             }
         };
 
@@ -138,6 +144,38 @@
                 'action': 'preview',
                 'markdown': markdown
             }));
+        }
+
+        // 显示错误消息
+        function displayErrorMessage(message) {
+            // 如果不存在错误消息元素，创建一个
+            if (!document.getElementById('error-message')) {
+                var errorDiv = document.createElement('div');
+                errorDiv.id = 'error-message';
+                errorDiv.style.position = 'fixed';
+                errorDiv.style.bottom = '20px';
+                errorDiv.style.left = '20px';
+                errorDiv.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+                errorDiv.style.color = '#fff';
+                errorDiv.style.padding = '10px';
+                errorDiv.style.borderRadius = '5px';
+                errorDiv.style.maxWidth = '300px';
+                errorDiv.style.zIndex = '1000';
+                errorDiv.style.fontSize = '14px';
+                errorDiv.style.lineHeight = '1.5';
+                document.body.appendChild(errorDiv);
+            }
+
+            var errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = '语法错误：' + message;
+        }
+
+        // 清除错误消息
+        function clearErrorMessage() {
+            var errorDiv = document.getElementById('error-message');
+            if (errorDiv) {
+                errorDiv.parentNode.removeChild(errorDiv);
+            }
         }
 
         // 自动保存功能，每分钟保存一次
