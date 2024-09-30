@@ -20,6 +20,16 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+    # 设置 Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # 创建一个支持多平台构建的 Buildx 实例
+    - name: Create builder
+      run: |
+        docker buildx create --name multiarch-builder --use
+        docker buildx inspect --bootstrap
+
     # 构建并推送多架构Docker镜像
     - name: Build and push multi-arch backend service image
       uses: docker/build-push-action@v2
