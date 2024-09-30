@@ -16,9 +16,33 @@
             border: 1px solid #ccc;
             position: relative;
             text-align: center;
-            line-height: 150px;
             font-size: 18px;
             cursor: pointer;
+            display: flex; /* 使用 Flex 布局 */
+            flex-direction: column;
+            justify-content: center; /* 垂直居中 */
+            overflow: hidden; /* 隐藏溢出内容 */
+            padding: 10px; /* 添加内边距 */
+            box-sizing: border-box; /* 使 padding 计入总高度 */
+        }
+
+        /* 更新点击区域的样式 */
+        .slide-item > div[onclick] {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 更新标题样式 */
+        .slide-item > div[onclick] > span.title-text {
+            overflow-wrap: break-word; /* 自动换行 */
+            word-break: break-all; /* 强制换行 */
+            display: -webkit-box; /* 兼容 WebKit 内核的浏览器 */
+            -webkit-line-clamp: 3; /* 显示最多 3 行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden; /* 超出部分隐藏 */
+            text-overflow: ellipsis; /* 显示省略号 */
         }
 
         .slide-item .title {
@@ -102,13 +126,15 @@
             <button class="lock-button" onclick="toggleLock({{ slide.id }}, {{ slide.lock|yesno:'true,false' }})">
                 {% if slide.lock %}
                     <!-- 锁定状态的SVG图标 -->
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-lock">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" class="icon-lock">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                 {% else %}
                     <!-- 解锁状态的SVG图标 -->
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-unlock">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" class="icon-unlock">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0"></path>
                     </svg>
