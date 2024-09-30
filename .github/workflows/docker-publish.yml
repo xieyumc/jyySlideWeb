@@ -20,10 +20,12 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    # 构建Docker镜像，显式指定Dockerfile的路径
-    - name: Build Docker image
-      run: docker build -f ./Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.ref_name }} .
-
-    # 推送Docker镜像到Docker Hub
-    - name: Push Docker image
-      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.ref_name }}
+    # 构建并推送多架构Docker镜像
+    - name: Build and push multi-arch backend service image
+      uses: docker/build-push-action@v2
+      with:
+        context: ./  # 你的Django项目的根目录
+        file: ./Dockerfile  # Dockerfile的路径
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:latest,${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.event.release.tag_name }}
+        platforms: linux/amd64,linux/arm64
+        push: true
