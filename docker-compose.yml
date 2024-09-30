@@ -13,7 +13,7 @@ services:
 
   watchtower:
     image: containrrr/watchtower
-    container_name: watchtower
+    container_name: watchtower_jyy_slide_web
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always
