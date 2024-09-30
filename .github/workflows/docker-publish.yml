@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   release:
-    types: [published]  # 当发布新版本时触发
+    types: [published]  # 仅在发布新版本时触发
 
 jobs:
   build:
@@ -20,9 +20,9 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    # 构建Docker镜像
+    # 构建Docker镜像，显式指定Dockerfile的路径
     - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.ref_name }} .
+      run: docker build -f ./Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.ref_name }} .
 
     # 推送Docker镜像到Docker Hub
     - name: Push Docker image
