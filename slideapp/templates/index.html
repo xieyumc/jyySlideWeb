@@ -1,5 +1,3 @@
-<!-- templates/index.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -68,15 +66,26 @@
             background-color: gray; /* 保持灰色，风格统一 */
         }
 
+        /* 锁图标的样式 */
         .lock-button {
             position: absolute;
             top: 5px;
-            left: 5px;
-            background-color: transparent;
-            border: none;
+            left: 5px; /* 左上角对齐 */
+            background-color: transparent; /* 移除背景 */
+            border: none; /* 移除边框 */
             cursor: pointer;
-            font-size: 16px;
-            color: black;
+            padding: 0;
+        }
+
+        .lock-button svg {
+            width: 16px; /* 锁图标的大小 */
+            height: 16px;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        .lock-button:hover svg {
+            color: #000; /* 悬停时的颜色变化 */
         }
     </style>
 </head>
@@ -92,9 +101,17 @@
         <div class="slide-item">
             <button class="lock-button" onclick="toggleLock({{ slide.id }}, {{ slide.lock|yesno:'true,false' }})">
                 {% if slide.lock %}
-                    🔒
+                    <!-- 锁定状态的SVG图标 -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-lock">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
                 {% else %}
-                    🔓
+                    <!-- 解锁状态的SVG图标 -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-unlock">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0"></path>
+                    </svg>
                 {% endif %}
             </button>
             <!-- 删除按钮 -->
