@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  jyy_slide_web:
+    image: mona233/jyy_slide_web:latest
+    container_name: jyy_slide_web
+    ports:
+      - "10001:10001"
+    volumes:
+      - ./media:/app/media
+      - ./db.sqlite3:/app/db.sqlite3
+    restart: always
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    environment:
+      - WATCHTOWER_CLEANUP=true
