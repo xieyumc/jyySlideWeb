@@ -1,0 +1,29 @@
+name: Docker Image CI
+
+on:
+  release:
+    types: [published]  # 当发布新版本时触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 检出项目代码
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # 设置Docker Hub凭据（需要提前在GitHub中设置Secrets）
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    # 构建Docker镜像
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.ref_name }} .
+
+    # 推送Docker镜像到Docker Hub
+    - name: Push Docker image
+      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/jyy_slide_web:${{ github.ref_name }}
