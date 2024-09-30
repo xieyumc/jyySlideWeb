@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 10001
 
 # 启动Daphne
-CMD ["daphne", "-p", "10001", "jyy_slide_web.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "10001", "jyy_slide_web.asgi:application"]

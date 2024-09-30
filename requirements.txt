@@ -9,4 +9,6 @@ types-markdown
 types-pyyaml
 types-requests
 whitenoise
+django
+channels
 daphne
