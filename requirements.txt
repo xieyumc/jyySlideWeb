@@ -9,3 +9,4 @@ types-markdown
 types-pyyaml
 types-requests
 whitenoise
+daphne
