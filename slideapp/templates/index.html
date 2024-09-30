@@ -119,7 +119,7 @@
             <!-- 点击幻灯片区域进入编辑 -->
             <div onclick="location.href='{% url 'edit_slide' slide.id %}'" style="height: 100%;">
                 {{ slide.title }}
-                <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
+                <div class="title">{{ slide.created_at|date:"Y-m-d H:i" }}</div>
             </div>
         </div>
     {% endfor %}

@@ -51,7 +51,8 @@ def upload_image(request):
 # slideapp/views.py
 @login_required
 def index(request):
-    slides = Slide.objects.all().order_by('-updated_at')
+    # 按照创建时间排序的幻灯片
+    slides = Slide.objects.all().order_by('-created_at')  # 按照创建时间降序排序
     return render(request, 'index.html', {'slides': slides})
 
 @login_required
@@ -81,7 +82,7 @@ def toggle_lock(request, slide_id):
 
 
 def public_slides(request):
-    slides = Slide.objects.filter(lock=False).order_by('-updated_at')
+    slides = Slide.objects.filter(lock=False).order_by('-created_at')
     return render(request, 'public_slides.html', {'slides': slides})
 
 def public_edit_slide(request, slide_id):

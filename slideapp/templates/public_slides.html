@@ -39,7 +39,7 @@
         {% for slide in slides %}
         <div class="slide-item" onclick="location.href='{% url 'public_edit_slide' slide.id %}'">
             {{ slide.title }}
-            <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
+            <div class="title">{{ slide.created_at|date:"Y-m-d H:i" }}</div>
         </div>
         {% endfor %}
     </div>
