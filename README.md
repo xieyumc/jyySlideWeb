@@ -1,5 +1,5 @@
 # feature🚀
-可以尝试访问在线[demo](http://slide.yuyu.pub/public/)，直接编写查看效果👀
+可以尝试访问在线[demo](http://slide.yuyu.pub/public/)，直接编写查看效果👀（小带宽服务器，请耐心等待）
 
 ![realtime-converter.gif](staticfiles/img/realtime-converter.gif)
 > 实时转换：左边输入markdown，右边可以实时看到生成的效果
