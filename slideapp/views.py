@@ -15,6 +15,7 @@ from .models import Slide
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 @csrf_exempt
 @login_required
@@ -68,3 +69,21 @@ def delete_slide(request, slide_id):
     slide = get_object_or_404(Slide, id=slide_id)
     slide.delete()
     return JsonResponse({'status': 'success'})
+
+@login_required
+@require_POST
+def toggle_lock(request, slide_id):
+    slide = get_object_or_404(Slide, id=slide_id)
+    # 切换锁定状态
+    slide.lock = not slide.lock
+    slide.save()
+    return JsonResponse({'status': 'success', 'lock': slide.lock})
+
+
+def public_slides(request):
+    slides = Slide.objects.filter(lock=False).order_by('-updated_at')
+    return render(request, 'public_slides.html', {'slides': slides})
+
+def public_edit_slide(request, slide_id):
+    slide = get_object_or_404(Slide, id=slide_id, lock=False)
+    return render(request, 'public_edit_slide.html', {'slide': slide})

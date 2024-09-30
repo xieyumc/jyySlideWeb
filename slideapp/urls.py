@@ -13,5 +13,8 @@ urlpatterns = [
 # 登录和注销
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('toggle_lock/<int:slide_id>/', views.toggle_lock, name='toggle_lock'),
+    path('public/', views.public_slides, name='public_slides'),
+    path('public/edit/<int:slide_id>/', views.public_edit_slide, name='public_edit_slide'),
 
 ]

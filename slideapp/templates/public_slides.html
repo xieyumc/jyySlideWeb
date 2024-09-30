@@ -1,0 +1,47 @@
+<!-- templates/public_slides.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Public Slides</title>
+    <style>
+        /* 与 index.html 中的样式类似 */
+        .slide-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .slide-item {
+            width: 200px;
+            height: 150px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            position: relative;
+            text-align: center;
+            line-height: 150px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .slide-item .title {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 100%;
+            font-size: 14px;
+            line-height: normal;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1></h1>
+    <div class="slide-list">
+        <!-- 展示公开的幻灯片 -->
+        {% for slide in slides %}
+        <div class="slide-item" onclick="location.href='{% url 'public_edit_slide' slide.id %}'">
+            {{ slide.title }}
+            <div class="title">{{ slide.updated_at|date:"Y-m-d H:i" }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
