@@ -94,7 +94,10 @@
     <!-- 与 WebSocket 进行通信的脚本 -->
     <script>
         var slideId = {{ slide.id }};
-        var socket = new WebSocket('ws://' + window.location.host + '/ws/public_slide/' + slideId + '/');
+    // 自动判断使用 ws:// 或 wss://
+        var protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        var socket = new WebSocket(protocol + window.location.host + '/ws/slide/' + slideId + '/');
+
         var currentIndices = {h: 0, v: 0, f: undefined};
         var editor = document.getElementById('editor');
 
