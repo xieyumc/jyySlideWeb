@@ -123,6 +123,22 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
+    # 为 /static 路径的静态资源设置缓存策略
+    location /static/ {
+
+        proxy_pass http://127.0.0.1:10001;  # 代理到后端服务器
+
+        # 设置浏览器缓存头，缓存30天
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+
+        # 允许跨域（如果需要）
+        add_header Access-Control-Allow-Origin *;
+
+        # 禁用日志（可选，减少日志量）
+        access_log off;
+        }
+        
     }
 ```
 
