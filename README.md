@@ -102,6 +102,29 @@ docker-compose up
 
 ![img.png](staticfiles/img/public-mode.png)
 
+# 配置nginx
+
+如果需要配置nginx，由于本项目使用了websocket，需要一些特殊的设置，可以参考下面的配置
+
+```nginx
+server {
+        listen 80;
+         server_name ;
+
+    location / {
+        proxy_pass http://127.0.0.1:10001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket 特别配置
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    }
+```
 
 # 感谢🙏
 
