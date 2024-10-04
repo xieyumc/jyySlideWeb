@@ -50,22 +50,26 @@ def upload_image(request):
 
 # slideapp/views.py
 @login_required
+@csrf_exempt
 def index(request):
     # 按照创建时间排序的幻灯片
     slides = Slide.objects.all().order_by('-created_at')  # 按照创建时间降序排序
     return render(request, 'index.html', {'slides': slides})
 
 @login_required
+@csrf_exempt
 def create_slide(request):
     slide = Slide.objects.create()
     return redirect('edit_slide', slide_id=slide.id)
 
 @login_required
+@csrf_exempt
 def edit_slide(request, slide_id):
     slide = Slide.objects.get(id=slide_id)
     return render(request, 'edit_slide.html', {'slide': slide})
 
 @login_required
+@csrf_exempt
 def delete_slide(request, slide_id):
     slide = get_object_or_404(Slide, id=slide_id)
     slide.delete()
@@ -73,6 +77,7 @@ def delete_slide(request, slide_id):
 
 @login_required
 @require_POST
+@csrf_exempt
 def toggle_lock(request, slide_id):
     slide = get_object_or_404(Slide, id=slide_id)
     # 切换锁定状态
@@ -81,10 +86,12 @@ def toggle_lock(request, slide_id):
     return JsonResponse({'status': 'success', 'lock': slide.lock})
 
 
+@csrf_exempt
 def public_slides(request):
     slides = Slide.objects.filter(lock=False).order_by('-created_at')
     return render(request, 'public_slides.html', {'slides': slides})
 
+@csrf_exempt
 def public_edit_slide(request, slide_id):
     slide = get_object_or_404(Slide, id=slide_id, lock=False)
     return render(request, 'public_edit_slide.html', {'slide': slide})
