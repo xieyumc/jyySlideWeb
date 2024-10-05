@@ -1,5 +1,5 @@
 # feature🚀
-可以尝试访问在线[demo](http://slide.yuyu.pub/public/)，直接编写查看效果👀（小带宽服务器，请耐心等待）
+可以尝试访问在线[demo](http://slide.yuyu.pub/public/)，直接查看效果👀
 
 ![realtime-converter.gif](staticfiles/img/realtime-converter.gif)
 > 实时转换：左边输入markdown，右边可以实时看到生成的效果
@@ -51,7 +51,6 @@
 ```
 environment:
   - CSRF_TRUSTED_ORIGINS=https://localhost,https://yourdomain.com  # 定义CSRF信任域
-
 ```
 这个环境变量是用来定义CSRF信任域的，如果你的域名是`yourdomain.com`，那么你需要把`https://yourdomain.com`改成你的域名（如果你不使用https，也可以不设置）
 
@@ -111,10 +110,11 @@ docker-compose up
 
 如果需要配置nginx，由于本项目使用了websocket，需要一些特殊的设置，可以参考下面的配置
 
+## http配置
 ```nginx
 server {
-        listen 80;
-         server_name ;
+    listen 80;
+    server_name yourdomain.com;  # 填写你的域名
 
     location / {
         proxy_pass http://127.0.0.1:10001;
@@ -156,6 +156,69 @@ server {
     }
 ```
 
+## https和http/3配置
+```nginx
+server {
+        listen 443 ssl;
+        listen 443 quic;
+        listen [::]:443 quic;
+        http2 on;
+
+        server_name yourdomain.com;  # 填写你的域名
+
+        ssl_certificate /etc/nginx/certs/       # 你的SSL证书
+        ssl_certificate_key /etc/nginx/certs/   # 你的SSL证书
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        location / {
+            proxy_pass http://127.0.0.1:10001;
+            
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Referer $http_referer;
+            proxy_set_header Origin $http_origin;
+
+            # WebSocket 特别配置
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            
+            add_header Alt-Svc 'h3=":443"; ma=86400';
+
+
+        }
+
+        # 为 /static 路径的静态资源设置缓存策略
+        location /static/ {
+            proxy_pass http://127.0.0.1:10001;  # 代理到后端服务器
+            
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Referer $http_referer;
+            proxy_set_header Origin $http_origin;
+
+            # 设置浏览器缓存头，缓存30天
+            expires 30d;
+            add_header Cache-Control "public, max-age=2592000";
+            
+            # 允许跨域（如果需要）
+             add_header Access-Control-Allow-Origin *;
+
+            # 禁用日志（可选，减少日志量）
+            access_log off;
+            add_header Alt-Svc 'h3=":443"; ma=86400';
+
+
+        }
+    }
+```
 # 感谢🙏
 
 本项目的灵感来源为南京大学的[jyy老师](https://jyywiki.cn)
