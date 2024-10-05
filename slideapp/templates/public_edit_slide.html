@@ -1,31 +1,19 @@
-<!-- templates/public_edit_slide.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>{{ slide.title }}</title>
     <style>
-        /* 与 edit_slide.html 中的样式一致 */
-        body {
-            display: flex;
-            height: 100vh;
+        /* 全屏显示的样式 */
+        body, html {
             margin: 0;
-        }
-
-        #editor {
-            width: 50%;
+            padding: 0;
             height: 100%;
+            width: 100%;
         }
 
         #preview {
-            width: 50%;
-            height: 100%;
-        }
-
-        iframe {
             width: 100%;
             height: 100%;
-            border: none;
         }
 
         /* 工具栏样式 */
@@ -33,6 +21,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
+            z-index: 1000; /* 确保它在其他元素之上 */
         }
 
         /* 返回按钮样式 */
@@ -49,32 +38,6 @@
         .return-button:hover {
             background-color: gray;
         }
-
-        /* 消息框的通用样式 */
-        .message-box {
-            position: fixed;
-            left: 20px;
-            background-color: rgba(255, 0, 0, 0.8);
-            color: #fff;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 300px;
-            z-index: 1000;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* 提示消息框 */
-        .info-message-box {
-            bottom: 20px;
-            white-space: pre-line; /* 保持换行 */
-        }
-
-        /* 错误消息框 */
-        .error-message-box {
-            /* 默认底部偏移 */
-            bottom: 20px;
-        }
     </style>
 </head>
 <body>
@@ -83,175 +46,8 @@
     <button class="return-button" onclick="location.href='{% url 'public_slides' %}'">返回</button>
 </div>
 
-<textarea id="editor"></textarea>
 <div id="preview">
-    <iframe id="preview-iframe"></iframe>
+    {{ slide_html|safe }}  <!-- 渲染预览的HTML内容 -->
 </div>
-
-<!-- 引入必要的 JavaScript 库，例如 jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- 与 WebSocket 进行通信的脚本 -->
-<script>
-    var slideId = {{ slide.id }};
-    // 自动判断使用 ws:// 或 wss://
-    var protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    var socket = new WebSocket(protocol + window.location.host + '/ws/slide/' + slideId + '/');
-
-    var currentIndices = {h: 0, v: 0, f: undefined};
-    var editor = document.getElementById('editor');
-
-    socket.onopen = function (e) {
-        console.log('WebSocket 连接已打开');
-        // 加载幻灯片内容
-        socket.send(JSON.stringify({
-            'action': 'load'
-        }));
-    };
-
-    socket.onmessage = function (e) {
-        var data = JSON.parse(e.data);
-        var action = data['action'];
-
-        if (action === 'load') {
-            // 加载内容到编辑器
-            editor.value = data['content'];
-            // 初始加载时更新预览
-            sendPreview();
-        } else if (action === 'preview') {
-            var html_content = data['html'];
-
-            var iframe = document.getElementById('preview-iframe');
-
-            // 获取当前幻灯片的索引
-            if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.getIndices) {
-                currentIndices = iframe.contentWindow.Reveal.getIndices();
-            }
-
-            // 更新预览 iframe 的内容
-            iframe.contentDocument.open();
-            iframe.contentDocument.write(html_content);
-            iframe.contentDocument.close();
-
-            // 清除错误消息
-            clearErrorMessage();
-
-            // 等待 iframe 加载完成后，恢复幻灯片位置
-            iframe.onload = function () {
-                function restoreSlide() {
-                    if (iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
-                        iframe.contentWindow.Reveal.slide(currentIndices.h, currentIndices.v, currentIndices.f);
-
-                        // 当幻灯片变化时，更新 currentIndices
-                        iframe.contentWindow.Reveal.on('slidechanged', function (event) {
-                            currentIndices = iframe.contentWindow.Reveal.getIndices();
-                        });
-                    } else {
-                        setTimeout(restoreSlide, 50);
-                    }
-                }
-
-                restoreSlide();
-            };
-        } else if (action === 'error') {
-            var errorMessage = data['message'];
-            displayErrorMessage(errorMessage);
-        }
-    };
-
-    socket.onclose = function (e) {
-        console.log('WebSocket 连接已关闭');
-        console.log('关闭代码: ', e.code);
-        console.log('关闭原因: ', e.reason || '无理由');
-
-        // 如果你想更详细地调试 WebSocket 的关闭原因，可以根据关闭代码进行分类处理
-        if (e.code === 1006) {
-            console.log('WebSocket 关闭异常，可能是服务器不可用或网络问题。');
-        } else if (e.code === 1000) {
-            console.log('WebSocket 正常关闭。');
-        } else {
-            console.log('WebSocket 关闭，未知错误代码: ' + e.code);
-        }
-    };
-
-    // 监听编辑器内容的变化，实时预览
-    $('#editor').on('input', function () {
-        sendPreview();
-    });
-
-    function sendPreview() {
-        var markdown = $('#editor').val();
-        socket.send(JSON.stringify({
-            'action': 'preview',
-            'markdown': markdown
-        }));
-    }
-
-    // 显示错误消息
-    function displayErrorMessage(message) {
-        // 如果不存在错误消息元素，创建一个
-        if (!document.getElementById('error-message')) {
-            var errorDiv = document.createElement('div');
-            errorDiv.id = 'error-message';
-            errorDiv.className = 'message-box error-message-box';
-            document.body.appendChild(errorDiv);
-        }
-
-        var errorDiv = document.getElementById('error-message');
-        errorDiv.textContent = '语法错误：' + message;
-
-        // 动态调整错误消息框的位置
-        adjustErrorMessagePosition();
-    }
-
-    // 清除错误消息
-    function clearErrorMessage() {
-        var errorDiv = document.getElementById('error-message');
-        if (errorDiv) {
-            errorDiv.parentNode.removeChild(errorDiv);
-        }
-    }
-
-    // 显示提示消息
-    function displayInfoMessages(messages) {
-        // 如果不存在提示消息元素，创建一个
-        if (!document.getElementById('info-messages')) {
-            var infoDiv = document.createElement('div');
-            infoDiv.id = 'info-messages';
-            infoDiv.className = 'message-box info-message-box';
-            document.body.appendChild(infoDiv);
-        }
-
-        var infoDiv = document.getElementById('info-messages');
-        infoDiv.textContent = messages.join('\n');
-
-        // 动态调整错误消息框的位置（如果存在错误消息）
-        adjustErrorMessagePosition();
-    }
-
-    // 动态调整错误消息框的位置
-    function adjustErrorMessagePosition() {
-        var errorDiv = document.getElementById('error-message');
-        var infoDiv = document.getElementById('info-messages');
-        if (errorDiv && infoDiv) {
-            var infoRect = infoDiv.getBoundingClientRect();
-            var windowHeight = window.innerHeight;
-            var bottomOffset = windowHeight - infoRect.top + 10; // 10px 间隔
-            errorDiv.style.bottom = bottomOffset + 'px';
-        } else if (errorDiv) {
-            errorDiv.style.bottom = '20px'; // 如果没有提示消息，使用默认值
-        }
-    }
-
-    // 页面加载时，显示提示消息
-    window.onload = function () {
-        var messages = [
-            '处于访客模式，功能受限',
-            '自动保存已禁用：所有编辑的内容将不会保存',
-            '图片上传已禁用：编辑框将无法粘贴图片'
-        ];
-        displayInfoMessages(messages);
-    };
-</script>
 </body>
 </html>

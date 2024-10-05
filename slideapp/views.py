@@ -84,6 +84,44 @@ def public_slides(request):
     slides = Slide.objects.filter(lock=False).order_by('-created_at')
     return render(request, 'public_slides.html', {'slides': slides})
 
+
+from django.shortcuts import render, get_object_or_404
+from .models import Slide
+import tempfile
+import os
+from .src.converter import converter
+from django.conf import settings
+import traceback
+
+
 def public_edit_slide(request, slide_id):
     slide = get_object_or_404(Slide, id=slide_id, lock=False)
-    return render(request, 'public_edit_slide.html', {'slide': slide})
+
+    # 转换Markdown为HTML
+    slide_html = convert_markdown_to_html(slide.content)
+
+    return render(request, 'public_edit_slide.html', {'slide': slide, 'slide_html': slide_html})
+
+
+def convert_markdown_to_html(markdown_content):
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_md_file_path = os.path.join(temp_dir, 'temp.md')
+            with open(temp_md_file_path, 'w', encoding='utf-8') as temp_md_file:
+                temp_md_file.write(markdown_content)
+
+            # 调用转换器
+            converter(temp_md_file_path)
+
+            output_html_path = os.path.join(temp_dir, 'dist', 'index.html')
+            with open(output_html_path, 'r', encoding='utf-8') as html_file:
+                html_content = html_file.read()
+
+            html_content = html_content.replace('./static/', '/static/')
+            html_content = html_content.replace('./img/', '/static/img/')
+
+            return html_content
+    except Exception as e:
+        error_message = ''.join(traceback.format_exception_only(type(e), e))
+        print(f"转换失败: {error_message}")
+        return f"<p>转换失败: {error_message}</p>"
