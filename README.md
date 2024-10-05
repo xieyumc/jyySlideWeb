@@ -47,6 +47,14 @@
 └── media
     └── xxx.img
 ```
+然后，你需要在[docker-compose.yml](docker-compose.yml)文件中，修改CSRF_TRUSTED_ORIGINS
+```
+environment:
+  - CSRF_TRUSTED_ORIGINS=https://localhost,https://yourdomain.com  # 定义CSRF信任域
+
+```
+这个环境变量是用来定义CSRF信任域的，如果你的域名是`yourdomain.com`，那么你需要把`https://yourdomain.com`改成你的域名（如果你不使用https，也可以不设置）
+
 
 然后运行：
 

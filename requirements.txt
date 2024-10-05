@@ -12,3 +12,4 @@ whitenoise
 django
 channels
 daphne
+twisted[http2,tls]
