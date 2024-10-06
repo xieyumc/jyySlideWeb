@@ -10,7 +10,6 @@ services:
     restart: always
     environment:
       - CSRF_TRUSTED_ORIGINS=https://localhost,https://yourdomain.com  # 定义CSRF信任域
-      - DJANGO_DEBUG=False
 
   watchtower:
     image: containrrr/watchtower
