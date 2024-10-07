@@ -6,6 +6,13 @@
 
 <br><br>
 
+
+![realtime-preview.gif](staticfiles/img/realtime-preview.gif)
+>幻灯片自动切换到正在编辑位置：右边幻灯片预览会和左边编辑位置实时对应，方便查看效果
+
+<br><br>
+
+
 ![auto-save.png](staticfiles/img/auto-save.png)
 > 自动保存：编辑幻灯片时每分钟都会自动保存一次，并且在关闭窗口，返回主页时都会自动保存
 
