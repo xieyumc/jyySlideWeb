@@ -1,3 +1,4 @@
+<!-- edit_slide.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,11 +13,18 @@
         #editor {
             width: 50%;
             height: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 14px;
+            border: none;
+            outline: none;
         }
 
         #preview {
             width: 50%;
             height: 100%;
+            border-left: 1px solid #ccc;
         }
 
         iframe {
@@ -30,10 +38,12 @@
             position: fixed;
             top: 20px;
             right: 20px;
+            display: flex;
+            gap: 10px; /* 添加按钮间距 */
         }
 
-        /* 返回主页按钮样式 */
-        .return-button {
+        /* 按钮样式 */
+        .toolbar-button {
             background-color: gray;
             border: none;
             color: #ffffff;
@@ -43,54 +53,55 @@
             border-radius: 0;
         }
 
-        .return-button:hover {
-            background-color: gray;
+        .toolbar-button:hover {
+            background-color: darkgray;
         }
     </style>
 </head>
 <body>
-<!-- 工具栏，包含返回主页的按钮 -->
-<div id="toolbar">
-    <button class="return-button" onclick="location.href='{% url 'index' %}'">返回主页</button>
-</div>
+    <!-- 工具栏，包含返回主页和查看历史的按钮 -->
+    <div id="toolbar">
+        <button class="toolbar-button" onclick="location.href='{% url 'index' %}'">返回主页</button>
+        <button class="toolbar-button" onclick="location.href='{% url 'slide_history' slide.id %}'">查看历史</button>
+    </div>
 
-<textarea id="editor"></textarea>
-<div id="preview">
-    <iframe id="preview-iframe"></iframe>
-</div>
+    <textarea id="editor"></textarea>
+    <div id="preview">
+        <iframe id="preview-iframe"></iframe>
+    </div>
 
-<!-- 引入 jQuery -->
-{% load static %}
-<script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
-<!-- 与 WebSocket 进行通信的脚本 -->
-<script>
-    var slideId = {{ slide.id }};
+    <!-- 引入 jQuery -->
+    {% load static %}
+    <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+    <!-- 与 WebSocket 进行通信的脚本 -->
+    <script>
+        var slideId = {{ slide.id }};
 
-    // 自动判断使用 ws:// 或 wss://
-    var protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    var socket = new WebSocket(protocol + window.location.host + '/ws/slide/' + slideId + '/');
+        // 自动判断使用 ws:// 或 wss://
+        var protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        var socket = new WebSocket(protocol + window.location.host + '/ws/slide/' + slideId + '/');
 
-    var currentIndices = {h: 0, v: 0};
-    var editor = document.getElementById('editor');
+        var currentIndices = {h: 0, v: 0};
+        var editor = document.getElementById('editor');
 
-    var slides = []; // 存储幻灯片的位置信息
-    var lastSlideIndices = {h: -1, v: -1}; // 记录上一次的幻灯片索引
+        var slides = []; // 存储幻灯片的位置信息
+        var lastSlideIndices = {h: -1, v: -1}; // 记录上一次的幻灯片索引
 
-    socket.onopen = function (e) {
-        console.log('WebSocket 连接已打开');
-        // 加载幻灯片内容
-        socket.send(JSON.stringify({
-            'action': 'load'
-        }));
-    };
+        socket.onopen = function (e) {
+            console.log('WebSocket 连接已打开');
+            // 加载幻灯片内容
+            socket.send(JSON.stringify({
+                'action': 'load'
+            }));
+        };
 
-    socket.onmessage = function (e) {
-        var data = JSON.parse(e.data);
-        var action = data['action'];
+        socket.onmessage = function (e) {
+            var data = JSON.parse(e.data);
+            var action = data['action'];
 
-        if (action === 'load') {
-            // 加载内容到编辑器
-            editor.value = data['content'] || `# 新建幻灯片
+            if (action === 'load') {
+                // 加载内容到编辑器
+                editor.value = data['content'] || `# 新建幻灯片
 <hr>
 
 >[作者]()
@@ -102,328 +113,324 @@
 ## 子主题一
 
 ----
-
 ## 子主题二
 
 ++++
-
 ## 子主题三
 
 ---
-
 # 主题二
 ----
 ## 子主题一
 
 ----
-
 ## 子主题二
 
 <!-- 您可以在这里添加更多内容 -->
 `;
-            // 解析幻灯片
-            slides = parseSlides(editor.value);
+                // 解析幻灯片
+                slides = parseSlides(editor.value);
 
-            // 初始加载时更新预览
-            sendPreview();
+                // 初始加载时更新预览
+                sendPreview();
 
-            // 初始设置光标位置事件
-            onCursorPositionChange();
-        } else if (action === 'preview') {
-            var html_content = data['html'];
+                // 初始设置光标位置事件
+                onCursorPositionChange();
+            } else if (action === 'preview') {
+                var html_content = data['html'];
 
-            var iframe = document.getElementById('preview-iframe');
+                var iframe = document.getElementById('preview-iframe');
 
-            // 获取当前幻灯片的索引
-            if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.getIndices) {
-                currentIndices = iframe.contentWindow.Reveal.getIndices();
-            }
-
-            // 更新预览 iframe 的内容
-            iframe.contentDocument.open();
-            iframe.contentDocument.write(html_content);
-            iframe.contentDocument.close();
-
-            // 清除错误消息
-            clearErrorMessage();
-
-            // 等待 iframe 加载完成后，恢复幻灯片位置
-            iframe.onload = function () {
-                function restoreSlide() {
-                    if (iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
-                        iframe.contentWindow.Reveal.slide(currentIndices.h, currentIndices.v);
-
-                        // 当幻灯片变化时，更新 currentIndices
-                        iframe.contentWindow.Reveal.on('slidechanged', function (event) {
-                            currentIndices = iframe.contentWindow.Reveal.getIndices();
-                        });
-
-                        // 根据光标位置导航到对应的幻灯片
-                        navigateToSlide(lastSlideIndices.h, lastSlideIndices.v);
-                    } else {
-                        setTimeout(restoreSlide, 50);
-                    }
+                // 获取当前幻灯片的索引
+                if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.getIndices) {
+                    currentIndices = iframe.contentWindow.Reveal.getIndices();
                 }
 
-                restoreSlide();
+                // 更新预览 iframe 的内容
+                iframe.contentDocument.open();
+                iframe.contentDocument.write(html_content);
+                iframe.contentDocument.close();
+
+                // 清除错误消息
+                clearErrorMessage();
+
+                // 等待 iframe 加载完成后，恢复幻灯片位置
+                iframe.onload = function () {
+                    function restoreSlide() {
+                        if (iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
+                            iframe.contentWindow.Reveal.slide(currentIndices.h, currentIndices.v);
+
+                            // 当幻灯片变化时，更新 currentIndices
+                            iframe.contentWindow.Reveal.on('slidechanged', function (event) {
+                                currentIndices = iframe.contentWindow.Reveal.getIndices();
+                            });
+
+                            // 根据光标位置导航到对应的幻灯片
+                            navigateToSlide(lastSlideIndices.h, lastSlideIndices.v);
+                        } else {
+                            setTimeout(restoreSlide, 50);
+                        }
+                    }
+
+                    restoreSlide();
+                };
+            } else if (action === 'error') {
+                var errorMessage = data['message'];
+                displayErrorMessage(errorMessage);
+            }
+        };
+
+        socket.onclose = function (e) {
+            console.log('WebSocket 连接已关闭');
+        };
+
+        // 监听编辑器内容的变化，实时预览
+        $('#editor').on('input', function () {
+            // 更新幻灯片解析
+            slides = parseSlides(editor.value);
+
+            sendPreview();
+        });
+
+        function sendPreview() {
+            var markdown = $('#editor').val();
+            socket.send(JSON.stringify({
+                'action': 'preview',
+                'markdown': markdown
+            }));
+        }
+
+        // 显示错误消息
+        function displayErrorMessage(message) {
+            // 如果不存在错误消息元素，创建一个
+            if (!document.getElementById('error-message')) {
+                var errorDiv = document.createElement('div');
+                errorDiv.id = 'error-message';
+                errorDiv.style.position = 'fixed';
+                errorDiv.style.bottom = '20px';
+                errorDiv.style.left = '20px';
+                errorDiv.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+                errorDiv.style.color = '#fff';
+                errorDiv.style.padding = '10px';
+                errorDiv.style.borderRadius = '5px';
+                errorDiv.style.maxWidth = '300px';
+                errorDiv.style.zIndex = '1000';
+                errorDiv.style.fontSize = '14px';
+                errorDiv.style.lineHeight = '1.5';
+                document.body.appendChild(errorDiv);
+            }
+
+            var errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = '语法错误：' + message;
+        }
+
+        // 清除错误消息
+        function clearErrorMessage() {
+            var errorDiv = document.getElementById('error-message');
+            if (errorDiv) {
+                errorDiv.parentNode.removeChild(errorDiv);
+            }
+        }
+
+        // 自动保存功能，每分钟保存一次
+        setInterval(function () {
+            saveSlide();
+        }, 60000); // 60000 毫秒，即 1 分钟
+
+        // 手动保存函数
+        function saveSlide() {
+            var markdown = $('#editor').val();
+            socket.send(JSON.stringify({
+                'action': 'save',
+                'markdown': markdown
+            }));
+            console.log('幻灯片已保存');
+        }
+
+        // 在页面关闭或刷新时，保存内容
+        window.addEventListener('beforeunload', function (e) {
+            saveSlide();
+        });
+
+        // 获取 CSRF token 的函数
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    // 检查这个 cookie 字符串是否以我们想要的名字开头
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        var csrftoken = getCookie('csrftoken');
+
+        // 监听粘贴事件
+        editor.addEventListener('paste', function (e) {
+            var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    var file = items[i].getAsFile();
+                    uploadImage(file);
+                    e.preventDefault();
+                }
+            }
+        });
+
+        // 监听拖放事件
+        editor.addEventListener('drop', function (e) {
+            e.preventDefault();
+            var files = e.dataTransfer.files;
+            for (var i = 0; i < files.length; i++) {
+                if (files[i].type.indexOf('image') !== -1) {
+                    uploadImage(files[i]);
+                }
+            }
+        });
+
+        function uploadImage(file) {
+            var formData = new FormData();
+            formData.append('image', file);
+
+            // 使用 AJAX 发送图片数据
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload_image/', true);
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.url) {
+                        insertImageMarkdown(response.url);
+                    } else {
+                        alert('上传失败');
+                    }
+                } else {
+                    alert('上传失败');
+                }
             };
-        } else if (action === 'error') {
-            var errorMessage = data['message'];
-            displayErrorMessage(errorMessage);
-        }
-    };
 
-    socket.onclose = function (e) {
-        console.log('WebSocket 连接已关闭');
-    };
-
-    // 监听编辑器内容的变化，实时预览
-    $('#editor').on('input', function () {
-        // 更新幻灯片解析
-        slides = parseSlides(editor.value);
-
-        sendPreview();
-    });
-
-    function sendPreview() {
-        var markdown = $('#editor').val();
-        socket.send(JSON.stringify({
-            'action': 'preview',
-            'markdown': markdown
-        }));
-    }
-
-    // 显示错误消息
-    function displayErrorMessage(message) {
-        // 如果不存在错误消息元素，创建一个
-        if (!document.getElementById('error-message')) {
-            var errorDiv = document.createElement('div');
-            errorDiv.id = 'error-message';
-            errorDiv.style.position = 'fixed';
-            errorDiv.style.bottom = '20px';
-            errorDiv.style.left = '20px';
-            errorDiv.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
-            errorDiv.style.color = '#fff';
-            errorDiv.style.padding = '10px';
-            errorDiv.style.borderRadius = '5px';
-            errorDiv.style.maxWidth = '300px';
-            errorDiv.style.zIndex = '1000';
-            errorDiv.style.fontSize = '14px';
-            errorDiv.style.lineHeight = '1.5';
-            document.body.appendChild(errorDiv);
+            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+            xhr.send(formData);
         }
 
-        var errorDiv = document.getElementById('error-message');
-        errorDiv.textContent = '语法错误：' + message;
-    }
+        function insertImageMarkdown(url) {
+            var markdownImage = '![](' + url + ')';
 
-    // 清除错误消息
-    function clearErrorMessage() {
-        var errorDiv = document.getElementById('error-message');
-        if (errorDiv) {
-            errorDiv.parentNode.removeChild(errorDiv);
+            // 获取光标位置并插入文本
+            var startPos = editor.selectionStart;
+            var endPos = editor.selectionEnd;
+            var value = editor.value;
+
+            editor.value = value.substring(0, startPos) + markdownImage + value.substring(endPos);
+            editor.selectionStart = editor.selectionEnd = startPos + markdownImage.length;
+
+            // 触发输入事件，更新预览
+            editor.dispatchEvent(new Event('input'));
         }
-    }
 
-    // 自动保存功能，每分钟保存一次
-    setInterval(function () {
-        saveSlide();
-    }, 60000); // 60000 毫秒，即 1 分钟
+        // 解析幻灯片函数，支持新的分隔符
+        function parseSlides(markdownText) {
+            var lines = markdownText.split('\n');
+            var slides = [];
+            var position = 0;
+            var currentSlideStart = 0;
+            var hIndex = 0; // 水平索引
+            var vIndex = 0; // 垂直索引
 
-    // 手动保存函数
-    function saveSlide() {
-        var markdown = $('#editor').val();
-        socket.send(JSON.stringify({
-            'action': 'save',
-            'markdown': markdown
-        }));
-        console.log('幻灯片已保存');
-    }
+            for (var i = 0; i <= lines.length; i++) {
+                var line = lines[i] || '';
 
-    // 在页面关闭或刷新时，保存内容
-    window.addEventListener('beforeunload', function (e) {
-        saveSlide();
-    });
+                if (line.trim() === '---') {
+                    // 水平幻灯片分隔符
+                    slides.push({
+                        start: currentSlideStart,
+                        end: position,
+                        h: hIndex,
+                        v: vIndex
+                    });
+                    hIndex++;
+                    vIndex = 0;
+                    currentSlideStart = position + line.length + 1;
+                } else if (line.trim() === '----' || line.trim() === '++++') {
+                    // 垂直幻灯片分隔符
+                    slides.push({
+                        start: currentSlideStart,
+                        end: position,
+                        h: hIndex,
+                        v: vIndex
+                    });
+                    vIndex++;
+                    currentSlideStart = position + line.length + 1;
+                }
 
-    // 获取 CSRF token 的函数
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            let cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                let cookie = cookies[i].trim();
-                // 检查这个 cookie 字符串是否以我们想要的名字开头
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                position += line.length + 1; // +1 用于换行符
+            }
+
+            // 添加最后一张幻灯片
+            slides.push({
+                start: currentSlideStart,
+                end: position,
+                h: hIndex,
+                v: vIndex
+            });
+
+            return slides;
+        }
+
+        // 导航到指定幻灯片
+        function navigateToSlide(h, v) {
+            var iframe = document.getElementById('preview-iframe');
+
+            function doNavigate() {
+                if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
+                    iframe.contentWindow.Reveal.slide(h, v);
+                } else {
+                    // 等待并重试
+                    setTimeout(doNavigate, 50);
+                }
+            }
+
+            doNavigate();
+        }
+
+        // 光标位置变化处理函数
+        function onCursorPositionChange() {
+            var cursorPos = editor.selectionStart;
+
+            // 使用最新的幻灯片数组
+            for (var i = 0; i < slides.length; i++) {
+                var slide = slides[i];
+                if (cursorPos >= slide.start && cursorPos <= slide.end) {
+                    var h = slide.h;
+                    var v = slide.v;
+
+                    // 如果幻灯片索引已改变
+                    if (h !== lastSlideIndices.h || v !== lastSlideIndices.v) {
+                        lastSlideIndices.h = h;
+                        lastSlideIndices.v = v;
+                        // 导航到对应幻灯片
+                        navigateToSlide(h, v);
+                    }
                     break;
                 }
             }
         }
-        return cookieValue;
-    }
 
-    var csrftoken = getCookie('csrftoken');
+        // 监听光标位置变化事件
+        editor.addEventListener('keyup', onCursorPositionChange);
+        editor.addEventListener('mouseup', onCursorPositionChange);
 
-    // 监听粘贴事件
-    editor.addEventListener('paste', function (e) {
-        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (var i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                var file = items[i].getAsFile();
-                uploadImage(file);
-                e.preventDefault();
-            }
-        }
-    });
+        // 初始化幻灯片解析
+        slides = parseSlides(editor.value);
 
-    // 监听拖放事件
-    editor.addEventListener('drop', function (e) {
-        e.preventDefault();
-        var files = e.dataTransfer.files;
-        for (var i = 0; i < files.length; i++) {
-            if (files[i].type.indexOf('image') !== -1) {
-                uploadImage(files[i]);
-            }
-        }
-    });
-
-    function uploadImage(file) {
-        var formData = new FormData();
-        formData.append('image', file);
-
-        // 使用 AJAX 发送图片数据
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/upload_image/', true);
-
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                if (response.url) {
-                    insertImageMarkdown(response.url);
-                } else {
-                    alert('上传失败');
-                }
-            } else {
-                alert('上传失败');
-            }
-        };
-
-        xhr.setRequestHeader('X-CSRFToken', csrftoken);
-        xhr.send(formData);
-    }
-
-    function insertImageMarkdown(url) {
-        var markdownImage = '![](' + url + ')';
-
-        // 获取光标位置并插入文本
-        var startPos = editor.selectionStart;
-        var endPos = editor.selectionEnd;
-        var value = editor.value;
-
-        editor.value = value.substring(0, startPos) + markdownImage + value.substring(endPos);
-        editor.selectionStart = editor.selectionEnd = startPos + markdownImage.length;
-
-        // 触发输入事件，更新预览
-        editor.dispatchEvent(new Event('input'));
-    }
-
-    // 解析幻灯片函数，支持新的分隔符
-    function parseSlides(markdownText) {
-        var lines = markdownText.split('\n');
-        var slides = [];
-        var position = 0;
-        var currentSlideStart = 0;
-        var hIndex = 0; // 水平索引
-        var vIndex = 0; // 垂直索引
-
-        for (var i = 0; i <= lines.length; i++) {
-            var line = lines[i] || '';
-
-            if (line.trim() === '---') {
-                // 水平幻灯片分隔符
-                slides.push({
-                    start: currentSlideStart,
-                    end: position,
-                    h: hIndex,
-                    v: vIndex
-                });
-                hIndex++;
-                vIndex = 0;
-                currentSlideStart = position + line.length + 1;
-            } else if (line.trim() === '----' || line.trim() === '++++') {
-                // 垂直幻灯片分隔符
-                slides.push({
-                    start: currentSlideStart,
-                    end: position,
-                    h: hIndex,
-                    v: vIndex
-                });
-                vIndex++;
-                currentSlideStart = position + line.length + 1;
-            }
-
-            position += line.length + 1; // +1 用于换行符
-        }
-
-        // 添加最后一张幻灯片
-        slides.push({
-            start: currentSlideStart,
-            end: position,
-            h: hIndex,
-            v: vIndex
-        });
-
-        return slides;
-    }
-
-    // 导航到指定幻灯片
-    function navigateToSlide(h, v) {
-        var iframe = document.getElementById('preview-iframe');
-
-        function doNavigate() {
-            if (iframe.contentWindow && iframe.contentWindow.Reveal && iframe.contentWindow.Reveal.isReady()) {
-                iframe.contentWindow.Reveal.slide(h, v);
-            } else {
-                // 等待并重试
-                setTimeout(doNavigate, 50);
-            }
-        }
-
-        doNavigate();
-    }
-
-    // 光标位置变化处理函数
-    function onCursorPositionChange() {
-        var cursorPos = editor.selectionStart;
-
-        // 使用最新的幻灯片数组
-        for (var i = 0; i < slides.length; i++) {
-            var slide = slides[i];
-            if (cursorPos >= slide.start && cursorPos <= slide.end) {
-                var h = slide.h;
-                var v = slide.v;
-
-                // 如果幻灯片索引已改变
-                if (h !== lastSlideIndices.h || v !== lastSlideIndices.v) {
-                    lastSlideIndices.h = h;
-                    lastSlideIndices.v = v;
-                    // 导航到对应幻灯片
-                    navigateToSlide(h, v);
-                }
-                break;
-            }
-        }
-    }
-
-    // 监听光标位置变化事件
-    editor.addEventListener('keyup', onCursorPositionChange);
-    editor.addEventListener('mouseup', onCursorPositionChange);
-
-    // 初始化幻灯片解析
-    slides = parseSlides(editor.value);
-
-    // 初始设置光标位置事件
-    onCursorPositionChange();
-</script>
+        // 初始设置光标位置事件
+        onCursorPositionChange();
+    </script>
 </body>
 </html>

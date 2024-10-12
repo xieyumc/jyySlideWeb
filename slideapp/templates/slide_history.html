@@ -1,0 +1,134 @@
+<!-- slide_history.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ slide.title }} - 历史版本</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .version {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+        .version:last-child {
+            border-bottom: none;
+        }
+        .version h3 {
+            margin: 0;
+        }
+        .version p {
+            margin: 5px 0;
+        }
+        .restore-button, .delete-button, .compare-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-right: 5px; /* 添加右边距 */
+        }
+        .restore-button:hover, .delete-button:hover, .compare-button:hover {
+            background-color: #45a049;
+        }
+        .delete-button {
+            background-color: #f44336; /* 红色背景 */
+        }
+        .delete-button:hover {
+            background-color: #d32f2f; /* 深红色 */
+        }
+        /* 返回按钮样式 */
+        .return-button {
+            background-color: gray;
+            border: none;
+            color: #ffffff;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 0;
+            margin-bottom: 20px; /* 添加下边距 */
+        }
+        .return-button:hover {
+            background-color: darkgray;
+        }
+    </style>
+</head>
+<body>
+    <button class="return-button" onclick="location.href='{% url 'index' %}'">返回主页</button>
+    <h1>{{ slide.title }} - 历史版本</h1>
+    <hr>
+    {% for version in versions %}
+        <div class="version">
+            <h3>保存时间: {{ version.saved_at }} {% if forloop.first %}（最新版本）{% endif %}</h3>
+            <p>保存者: {% if version.saved_by %}{{ version.saved_by.username }}{% else %}未知{% endif %}</p>
+            <button class="restore-button" onclick="restoreVersion({{ version.id }})">回退到此版本</button>
+            <button class="delete-button" onclick="deleteVersion({{ version.id }})">删除版本</button>
+            <button class="compare-button" onclick="compareVersions({{ version.id }})">对照此版本</button>
+        </div>
+    {% empty %}
+        <p>没有历史版本。</p>
+    {% endfor %}
+
+    <script>
+        function restoreVersion(versionId) {
+            if (confirm('确定要回退到此版本吗？这将覆盖当前的幻灯片内容。')) {
+                fetch(`/slide/{{ slide.id }}/restore_version/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ 'version_id': versionId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('回退成功。');
+                        window.location.reload();
+                    } else {
+                        alert('回退失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('回退失败。');
+                });
+            }
+        }
+
+        function deleteVersion(versionId) {
+            if (confirm('确定要删除此版本吗？')) {
+                fetch(`/slide/{{ slide.id }}/delete_version/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ 'version_id': versionId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.location.reload();
+                    } else {
+                        alert('删除失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败。');
+                });
+            }
+        }
+
+        function compareVersions(versionId) {
+            const latestVersionId = '{{ versions.0.id }}';  // 获取最新版本的 ID
+            const slideId = '{{ slide.id }}';  // 获取当前幻灯片的 ID
+            const url = `/slide/${slideId}/compare_versions/?latest_id=${latestVersionId}&version_id=${versionId}`;
+            window.open(url, '_blank');  // 打开新窗口
+        }
+    </script>
+</body>
+</html>

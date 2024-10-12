@@ -17,6 +17,92 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Slide
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from .models import Slide, SlideVersion
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import SlideVersion
+
+from django.shortcuts import render, get_object_or_404
+from .models import Slide, SlideVersion
+
+def compare_versions(request, slide_id):
+    latest_id = request.GET.get('latest_id')
+    version_id = request.GET.get('version_id')
+
+    # 获取当前幻灯片对象
+    slide = get_object_or_404(Slide, id=slide_id)
+
+    # 获取最新版本和历史版本
+    latest_version = get_object_or_404(SlideVersion, id=latest_id)
+    selected_version = get_object_or_404(SlideVersion, id=version_id)
+
+    context = {
+        'slide': slide,
+        'latest_version': latest_version,
+        'selected_version': selected_version
+    }
+    return render(request, 'compare_versions.html', context)
+
+
+@csrf_exempt
+def delete_version(request, slide_id):
+    if request.method == 'DELETE':
+        data = json.loads(request.body)
+        version_id = data.get('version_id')
+
+        try:
+            version = SlideVersion.objects.get(id=version_id, slide_id=slide_id)
+            version.delete()
+            return JsonResponse({'status': 'success'})
+        except SlideVersion.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': '版本不存在'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+@require_POST
+@login_required
+def restore_slide_version(request, slide_id):
+    try:
+        data = json.loads(request.body)
+        version_id = data.get('version_id')
+        slide = Slide.objects.get(id=slide_id)
+        version = SlideVersion.objects.get(id=version_id, slide=slide)
+        
+        # 更新 Slide 的内容
+        slide.content = version.content
+        slide.save()
+        
+        # 创建新的 SlideVersion 作为回退后的版本
+        SlideVersion.objects.create(
+            slide=slide,
+            content=version.content,
+            saved_by=request.user if request.user.is_authenticated else None
+        )
+
+        return JsonResponse({'status': 'success'})
+    except Slide.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': '幻灯片不存在'}, status=404)
+    except SlideVersion.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': '版本不存在'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        
+@login_required
+def slide_history(request, slide_id):
+    slide = get_object_or_404(Slide, id=slide_id)
+    versions = slide.versions.all()  # 按照 Meta 中的 ordering 排列
+    return render(request, 'slide_history.html', {'slide': slide, 'versions': versions})
+
 @login_required
 def upload_image(request):
     if request.method == 'POST':

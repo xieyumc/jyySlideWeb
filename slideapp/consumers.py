@@ -15,6 +15,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from .models import Slide
 import traceback
+from .models import SlideVersion
 
 class SlideConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -108,6 +109,12 @@ class SlideConsumer(AsyncWebsocketConsumer):
 
         slide.title = title
         slide.save()
+        # 创建新的 SlideVersion 实例
+        SlideVersion.objects.create(
+            slide=slide,
+            content=content,
+            saved_by=self.scope['user'] if self.scope['user'].is_authenticated else None
+        )
 
     async def convert_markdown_to_html(self, markdown_content):
         try:

@@ -1,0 +1,151 @@
+<!-- compare_versions.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ slide.title }} - 对照版本</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .version-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .version {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 45%;
+            word-wrap: break-word; /* 自动换行 */
+            overflow-wrap: break-word; /* 防止内容溢出 */
+            white-space: pre-wrap; /* 保留换行符，自动换行 */
+            overflow: hidden; /* 隐藏溢出的内容 */
+        }
+        .version pre {
+            word-wrap: break-word; /* 自动换行 */
+            overflow-wrap: break-word; /* 防止内容溢出 */
+            white-space: pre-wrap; /* 允许保留空格和换行符 */
+            word-break: break-all; /* 强制长单词换行 */
+        }
+        h2 {
+            text-align: center;
+        }
+        .added {
+            background-color: lightgreen; /* 新增内容背景为绿色 */
+            padding: 2px; /* 内边距 */
+        }
+        .removed {
+            background-color: lightcoral; /* 删除内容背景为红色 */
+            padding: 2px; /* 内边距 */
+        }
+        .restore-button {
+            background-color: #4CAF50; /* 绿色背景 */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-top: 20px; /* 上边距 */
+        }
+        .restore-button:hover {
+            background-color: #45a049; /* 深绿色 */
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ slide.title }} - 对照版本</h1>
+    <div class="version-container">
+        <div class="version">
+            <h2>最新版本</h2>
+            <pre id="latest-content"></pre> <!-- 使用 <pre> 保留格式 -->
+            <p>保存时间: {{ latest_version.saved_at }}</p>
+            <p>保存者: {% if latest_version.saved_by %}{{ latest_version.saved_by.username }}{% else %}未知{% endif %}</p>
+        </div>
+        <div class="version">
+            <h2>历史版本</h2>
+            <pre id="selected-content"></pre> <!-- 使用 <pre> 保留格式 -->
+            <p>保存时间: {{ selected_version.saved_at }}</p>
+            <p>保存者: {% if selected_version.saved_by %}{{ selected_version.saved_by.username }}{% else %}未知{% endif %}</p>
+        </div>
+    </div>
+    <button class="restore-button" onclick="restoreToSelectedVersion({{ selected_version.id }})">回退到此版本</button>
+    <button onclick="window.close();">关闭对照</button> <!-- 关闭对照窗口的按钮 -->
+
+    <script>
+        // 模拟版本内容（将这些内容替换为实际的内容）
+        const latestContent = `{{ latest_version.content|escapejs }}`; // 最新版本内容
+        const selectedContent = `{{ selected_version.content|escapejs }}`; // 历史版本内容
+
+        // 函数：比较并标记内容
+        function compareVersions(latest, selected) {
+            const latestLines = latest.split(/\n/); // 按行拆分
+            const selectedLines = selected.split(/\n/); // 按行拆分
+
+            let markedLatest = '';
+            let markedSelected = '';
+
+            // 标记最新版本
+            latestLines.forEach(line => {
+                const words = line.split(/\s+/);
+                let markedLine = '';
+                words.forEach(word => {
+                    if (!selected.includes(word)) {
+                        markedLine += `<span class="added">${word}</span> `;
+                    } else {
+                        markedLine += `${word} `;
+                    }
+                });
+                markedLatest += markedLine.trim() + '<br>'; // 添加换行
+            });
+
+            // 标记历史版本
+            selectedLines.forEach(line => {
+                const words = line.split(/\s+/);
+                let markedLine = '';
+                words.forEach(word => {
+                    if (!latest.includes(word)) {
+                        markedLine += `<span class="removed">${word}</span> `;
+                    } else {
+                        markedLine += `${word} `;
+                    }
+                });
+                markedSelected += markedLine.trim() + '<br>'; // 添加换行
+            });
+
+            document.getElementById('latest-content').innerHTML = markedLatest;
+            document.getElementById('selected-content').innerHTML = markedSelected;
+        }
+
+        // 回退到选定的历史版本
+        function restoreToSelectedVersion(versionId) {
+            if (confirm('确定要回退到此版本吗？这将覆盖当前的幻灯片内容。')) {
+                fetch(`/slide/{{ slide.id }}/restore_version/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ 'version_id': versionId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('回退成功。');
+                        window.opener.location.reload(); // 刷新父窗口
+                        window.close(); // 关闭对照窗口
+                    } else {
+                        alert('回退失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('回退失败。');
+                });
+            }
+        }
+
+        // 调用比较函数
+        compareVersions(latestContent, selectedContent);
+    </script>
+</body>
+</html>
