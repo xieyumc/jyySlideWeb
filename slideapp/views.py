@@ -56,7 +56,22 @@ def index(request):
 
 @login_required
 def create_slide(request):
-    slide = Slide.objects.create()
+    # 获取当前文件所在的目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # 默认内容文件的路径
+    default_content_path = os.path.join(current_dir, 'default_content.md')
+
+    # 读取默认内容
+    with open(default_content_path, 'r', encoding='utf-8') as f:
+        default_content = f.read()
+
+    # 创建新的幻灯片，并设置默认内容
+    slide = Slide.objects.create(
+        title='未命名',
+        content=default_content,
+        lock=True
+    )
+
     return redirect('edit_slide', slide_id=slide.id)
 
 @login_required
