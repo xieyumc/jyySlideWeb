@@ -26,14 +26,13 @@ def add_data_dir(source_rel_path, target_rel_path):
     if os.path.exists(source_abs_path):
         datas.append((source_abs_path, target_rel_path))
     else:
-        print(f"警告：目录 '{source_abs_path}' 不存在，已跳过。")
+        print(f"Warning: Directory '{source_abs_path}' does not exist, skipped.")
 
 # 添加需要的资源目录
 add_data_dir('slideapp/templates', 'slideapp/templates')
 add_data_dir('slideapp/src/static', 'slideapp/src/static')
 add_data_dir('slideapp/src/backup/template', 'slideapp/src/backup/template')
 add_data_dir('jyy_slide_web', 'jyy_slide_web')
-
 
 # 添加收集后的静态文件目录
 add_data_dir('staticfiles', 'staticfiles')
@@ -46,7 +45,7 @@ db_file = os.path.join(project_root, 'db.sqlite3')
 if os.path.exists(db_file):
     datas.append((db_file, '.'))
 else:
-    print(f"警告：数据库文件 '{db_file}' 不存在，已跳过。")
+    print(f"Warning: Database file '{db_file}' does not exist, skipped.")
 # 可以在初次运行时创建数据库，或者在打包前复制数据库文件到目标机器
 
 a = Analysis(
