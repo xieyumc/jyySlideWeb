@@ -1,0 +1,41 @@
+name: Build with PyInstaller
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile with PyInstaller
+        run: |
+          pip install pyinstaller
+          pyinstaller jyy_slide_web.spec
+
+      - name: Compress output folder
+        run: |
+          Compress-Archive -Path './dist/jyy_slide_web/*' -DestinationPath './dist/jyy_slide_web.zip'
+
+      - name: Upload zip to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./dist/jyy_slide_web.zip
+          asset_name: jyy_slide_web.zip
+          asset_content_type: application/zip
