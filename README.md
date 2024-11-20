@@ -40,13 +40,13 @@
 
 ## Windows直接运行编译好的exe
 
-在[release](https://github.com/xieyumc/jyySlideWeb/releases)网页中，下载`jyy_slide_web.zip`，下载后解压打开`jyy_slide_web.exe`即可运行
+在[release](https://github.com/xieyumc/jyySlideWeb/releases)网页中，下载`jyy_slide_web.zip`，下载后解压压缩包（请完整解压，不要只解压exe）打开`jyy_slide_web.exe`即可运行
 
 项目会运行在本地10001端口，接下来请参考下一节的[快速上手](#快速上手)进行操作
 
 - 文章数据会存储在`_internal`文件夹中的`db.sqlite3`文件中
 - 上传图片的图片在`_internal`文件夹中的`media`文件夹中 
-- 若要迁移数据，只需要复制这两个文件夹即可
+- 若要升级软件后需要迁移数据，只需要复制这两个文件夹即可
 
 
 ## 使用docker安装
