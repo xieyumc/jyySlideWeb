@@ -41,7 +41,8 @@
 ## Windows直接运行编译好的exe
 
 在[release](https://github.com/xieyumc/jyySlideWeb/releases)网页中，下载`jyy_slide_web.zip`，下载后解压压缩包（请完整解压，不要只解压exe）打开`jyy_slide_web.exe`即可运行
-
+> 使用这个方式部署，实时转换时效率很低，转换很慢，我正在尝试解决这个问题，如果你有解决方案，欢迎PR
+>
 项目会运行在本地10001端口，接下来请参考下一节的[快速上手](#快速上手)进行操作
 
 - 文章数据会存储在`_internal`文件夹中的`db.sqlite3`文件中
